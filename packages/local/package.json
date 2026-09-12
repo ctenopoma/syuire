@@ -1,0 +1,17 @@
+{
+  "name": "@akaire/local",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "akaire": "./dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@akaire/core": "*"
+  }
+}

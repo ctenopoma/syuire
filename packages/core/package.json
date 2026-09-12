@@ -1,0 +1,30 @@
+{
+  "name": "@akaire/core",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@noble/hashes": "^1.8.0",
+    "decode-named-character-reference": "^1.1.0",
+    "mdast-util-from-markdown": "^2.0.2",
+    "mdast-util-gfm": "^3.1.0",
+    "micromark": "^4.0.2",
+    "micromark-extension-gfm": "^3.0.0",
+    "micromark-util-decode-numeric-character-reference": "^2.0.2",
+    "micromark-util-types": "^2.0.2"
+  },
+  "devDependencies": {
+    "@types/mdast": "^4.0.4"
+  }
+}
