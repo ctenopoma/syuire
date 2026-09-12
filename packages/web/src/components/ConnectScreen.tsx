@@ -41,11 +41,22 @@ export function ConnectScreen(props: ConnectScreenProps): VNode {
     setValues((prev) => ({ ...prev, [key]: value }));
   };
 
+  /** Trim every field; a pasted PAT often carries a trailing space or line break on iPad. */
+  const normalized = (): ConnectValues => ({
+    ...values,
+    owner: values.owner.trim(),
+    repo: values.repo.trim(),
+    branch: values.branch.trim(),
+    path: values.path.trim(),
+    author: values.author.trim(),
+    token: values.token.replace(/\s+/g, ""),
+  });
+
   const canConnect =
     values.owner.trim().length > 0 &&
     values.repo.trim().length > 0 &&
     values.branch.trim().length > 0 &&
-    values.token.length > 0 &&
+    values.token.trim().length > 0 &&
     !props.busy;
 
   const resolveAuthor = (): void => {
@@ -53,7 +64,7 @@ export function ConnectScreen(props: ConnectScreenProps): VNode {
     if (values.owner.trim().length === 0 || values.repo.trim().length === 0) return;
     setAuthorBusy(true);
     setAuthorNote(null);
-    props.lookupAuthor(values).then(
+    props.lookupAuthor(normalized()).then(
       (login) => {
         setAuthorBusy(false);
         if (login.length > 0) setValues((prev) => (prev.author.length > 0 ? prev : { ...prev, author: login }));
@@ -74,7 +85,7 @@ export function ConnectScreen(props: ConnectScreenProps): VNode {
         class="form"
         onSubmit={(e) => {
           e.preventDefault();
-          if (canConnect) props.onConnect(values);
+          if (canConnect) props.onConnect(normalized());
         }}
       >
         <label>
@@ -117,7 +128,7 @@ export function ConnectScreen(props: ConnectScreenProps): VNode {
             value={values.token}
             autocomplete="off"
             spellcheck={false}
-            onInput={(e) => set("token", (e.currentTarget as HTMLInputElement).value)}
+            onInput={(e) => set("token", (e.currentTarget as HTMLInputElement).value.replace(/\s+/g, ""))}
             onBlur={resolveAuthor}
           />
         </label>

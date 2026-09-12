@@ -369,6 +369,26 @@ function makeAdapter(gh: FakeGitHub, recorder: FetchRecorder, overrides: Partial
 // ---------------------------------------------------------------------------
 
 describe("GitHubAdapter", () => {
+  it("trims a pasted token and rejects one with inner whitespace before sending anything", async () => {
+    const gh = new FakeGitHub();
+    const sha = gh.seedRepo({ "docs/a.md": "# A\n" });
+    const recorder: FetchRecorder = { urls: [] };
+    const seenAuth: string[] = [];
+    const inner = createFakeFetch(gh, recorder);
+    const spying: typeof fetch = (input, init) => {
+      seenAuth.push(String((init?.headers as Record<string, string>)["Authorization"]));
+      return inner(input, init);
+    };
+    const trimmed = new GitHubAdapter({ owner: OWNER, repo: REPO, branch: BRANCH, token: `  ${TOKEN}\n`, fetch: spying });
+    await expect(trimmed.head()).resolves.toBe(sha);
+    expect(seenAuth).toEqual([`Bearer ${TOKEN}`]);
+
+    const broken = makeAdapter(gh, recorder, { token: "ghp_abc def" });
+    const before = recorder.urls.length;
+    await expect(broken.head()).rejects.toMatchObject({ kind: "auth" });
+    expect(recorder.urls.length).toBe(before);
+  });
+
   it("head() resolves the branch tip sha", async () => {
     const gh = new FakeGitHub();
     const sha = gh.seedRepo({ "README.md": "hello" });

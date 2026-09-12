@@ -20,6 +20,8 @@ import type {
 } from "@syuire/core";
 import { AdapterError, extractBatchId } from "@syuire/core";
 
+/** Printable ASCII only: GitHub tokens never contain whitespace or non-ASCII characters. */
+const TOKEN_PATTERN = /^[!-~]+$/;
 const DEFAULT_API_BASE = "https://api.github.com";
 /** DESIGN.md 7.1: v1 edit target is capped at 1 MiB per file. */
 const MAX_FILE_SIZE = 1024 * 1024;
@@ -131,7 +133,7 @@ export class GitHubAdapter implements RepositoryAdapter {
     this.owner = options.owner;
     this.repo = options.repo;
     this.branch = options.branch;
-    this.token = options.token;
+    this.token = options.token.trim();
     this.fetchImpl = options.fetch ?? fetch;
     this.apiBase = options.apiBase ?? DEFAULT_API_BASE;
   }
@@ -180,7 +182,8 @@ export class GitHubAdapter implements RepositoryAdapter {
       let response: Response;
       try {
         response = await this.rawFetch("GET", contentPath, { searchParams: { ref: rev } });
-      } catch {
+      } catch (e) {
+        if (e instanceof AdapterError) throw e;
         throw this.networkError();
       }
       if (response.status === 404) {
@@ -224,7 +227,8 @@ export class GitHubAdapter implements RepositoryAdapter {
     let response: Response;
     try {
       response = await this.rawFetch("GET", contentPath, { searchParams: { ref: revision } });
-    } catch {
+    } catch (e) {
+      if (e instanceof AdapterError) throw e;
       throw this.networkError();
     }
     if (response.status === 404) return null;
@@ -360,7 +364,8 @@ export class GitHubAdapter implements RepositoryAdapter {
       updateResponse = await this.rawFetch("PATCH", this.refPath("update"), {
         body: { sha: newCommit.sha, force: false },
       });
-    } catch {
+    } catch (e) {
+      if (e instanceof AdapterError) throw e;
       return { status: "unknown", batchId, candidateCommitId: newCommit.sha };
     }
     if (!updateResponse.ok) {
@@ -499,6 +504,10 @@ export class GitHubAdapter implements RepositoryAdapter {
     opts: { searchParams?: Record<string, string | undefined>; body?: unknown } = {},
   ): Promise<Response> {
     const url = this.buildUrl(path, opts.searchParams);
+    if (!TOKEN_PATTERN.test(this.token)) {
+      // A pasted token with whitespace or line breaks makes `fetch` throw before any request is sent.
+      throw new AdapterError("auth", "PAT が空か、空白・改行などの使えない文字を含んでいます。貼り直してください");
+    }
     const headers: Record<string, string> = {
       Authorization: `Bearer ${this.token}`,
       Accept: "application/vnd.github+json",
@@ -513,7 +522,10 @@ export class GitHubAdapter implements RepositoryAdapter {
   }
 
   private networkError(): AdapterError {
-    return new AdapterError("network", "GitHub request failed due to a network error");
+    return new AdapterError(
+      "network",
+      "GitHub に接続できませんでした。通信状態、コンテンツブロッカーや VPN の設定を確認してください",
+    );
   }
 
   private async fetchJson<T>(
@@ -524,7 +536,8 @@ export class GitHubAdapter implements RepositoryAdapter {
     let response: Response;
     try {
       response = await this.rawFetch(method, path, opts);
-    } catch {
+    } catch (e) {
+      if (e instanceof AdapterError) throw e;
       throw this.networkError();
     }
     if (!response.ok) {
