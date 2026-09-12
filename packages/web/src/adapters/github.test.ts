@@ -389,6 +389,24 @@ describe("GitHubAdapter", () => {
     expect(recorder.urls.length).toBe(before);
   });
 
+  it("calls the global fetch without an instance receiver (browsers throw Illegal invocation otherwise)", async () => {
+    const original = globalThis.fetch;
+    const calls: unknown[] = [];
+    // Emulate window.fetch: reject any call whose receiver is not the global object.
+    globalThis.fetch = function (this: unknown, input: RequestInfo | URL, init?: RequestInit) {
+      if (this !== globalThis && this !== undefined) throw new TypeError("Illegal invocation");
+      calls.push(input);
+      return Promise.resolve(new Response(JSON.stringify({ object: { sha: "a".repeat(40), type: "commit" } }), { status: 200 }));
+    } as typeof fetch;
+    try {
+      const adapter = new GitHubAdapter({ owner: OWNER, repo: REPO, branch: BRANCH, token: TOKEN });
+      await expect(adapter.head()).resolves.toBe("a".repeat(40));
+      expect(calls).toHaveLength(1);
+    } finally {
+      globalThis.fetch = original;
+    }
+  });
+
   it("head() resolves the branch tip sha", async () => {
     const gh = new FakeGitHub();
     const sha = gh.seedRepo({ "README.md": "hello" });
