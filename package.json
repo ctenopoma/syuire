@@ -1,5 +1,5 @@
 {
-  "name": "akaire-monorepo",
+  "name": "syuire-monorepo",
   "private": true,
   "version": "0.0.1",
   "type": "module",
@@ -7,7 +7,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build -w @akaire/core && npm run build -w @akaire/local && npm run build -w @akaire/web",
+    "build": "npm run build -w @syuire/core && npm run build -w @syuire/local && npm run build -w @syuire/web",
     "typecheck": "tsc -b packages/core packages/local packages/web",
     "test": "vitest run",
     "test:watch": "vitest",

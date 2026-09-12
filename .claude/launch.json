@@ -4,7 +4,7 @@
     {
       "name": "web",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "-w", "@akaire/web", "--", "--port", "5173", "--strictPort"],
+      "runtimeArgs": ["run", "dev", "-w", "@syuire/web", "--", "--port", "5173", "--strictPort"],
       "port": 5173
     }
   ]

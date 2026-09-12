@@ -1,5 +1,5 @@
 /**
- * Shared types for akaire core. See DESIGN.md sections 5, 7.
+ * Shared types for syuire core. See DESIGN.md sections 5, 7.
  * These are the contract between core, web, and local packages.
  */
 
@@ -296,13 +296,13 @@ export interface LocalRepositoryAdapter extends RepositoryAdapter {
 }
 
 /** Trailer key recorded in commit messages. */
-export const BATCH_TRAILER = "Akaire-Batch";
+export const BATCH_TRAILER = "syuire-Batch";
 
 export function formatCommitMessage(summary: string, batchId: string): string {
   return `${summary}\n\n${BATCH_TRAILER}: ${batchId}\n`;
 }
 
 export function extractBatchId(message: string): string | undefined {
-  const m = /^Akaire-Batch:\s*([0-9a-fA-F-]{36})\s*$/m.exec(message);
+  const m = /^syuire-Batch:\s*([0-9a-fA-F-]{36})\s*$/m.exec(message);
   return m?.[1];
 }

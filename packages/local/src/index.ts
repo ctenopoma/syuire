@@ -1,4 +1,4 @@
-/** Public entry point of @akaire/local. */
+/** Public entry point of @syuire/local. */
 
 export { startServer } from "./server.js";
 export type { StartServerOptions, RunningServer } from "./server.js";

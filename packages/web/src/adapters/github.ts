@@ -17,8 +17,8 @@ import type {
   Entry,
   RepositoryAdapter,
   Snapshot,
-} from "@akaire/core";
-import { AdapterError, extractBatchId } from "@akaire/core";
+} from "@syuire/core";
+import { AdapterError, extractBatchId } from "@syuire/core";
 
 const DEFAULT_API_BASE = "https://api.github.com";
 /** DESIGN.md 7.1: v1 edit target is capped at 1 MiB per file. */
@@ -390,7 +390,7 @@ export class GitHubAdapter implements RepositoryAdapter {
   // Extra capabilities used for recovery and authorship (DESIGN.md 5.1, 7.3)
   // -------------------------------------------------------------------
 
-  /** Find a commit on the session branch carrying the Akaire-Batch trailer. */
+  /** Find a commit on the session branch carrying the syuire-Batch trailer. */
   async findBatchCommit(batchId: string): Promise<string | null> {
     const { data } = await this.fetchJson<GitHubCommitListItem[]>(
       "GET",

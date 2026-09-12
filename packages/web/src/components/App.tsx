@@ -12,7 +12,7 @@ import {
   type RepositoryAdapter,
   type Snapshot,
   type SyncStatus,
-} from "@akaire/core";
+} from "@syuire/core";
 
 import { GitHubAdapter } from "../adapters/github";
 import { LocalAdapterClient } from "../adapters/local";
@@ -186,7 +186,7 @@ export function App(): VNode {
       return;
     }
     if (localSessionFlag(sessionStore)) {
-      // This tab was opened from `akaire serve`, but the reload lost the
+      // This tab was opened from `syuire serve`, but the reload lost the
       // fragment that carried the one-shot session token.
       setConnectError(
         "ローカル実行層のセッショントークンは URL から取り除かれています。再読込では接続できません。" +
@@ -745,7 +745,7 @@ export function App(): VNode {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `akaire-queue-${file.path.replace(/[\\/]/g, "_")}.json`;
+    a.download = `syuire-queue-${file.path.replace(/[\\/]/g, "_")}.json`;
     document.body.appendChild(a);
     a.click();
     a.remove();

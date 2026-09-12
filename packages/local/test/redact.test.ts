@@ -1,4 +1,4 @@
-import { AdapterError } from "@akaire/core";
+import { AdapterError } from "@syuire/core";
 import { describe, expect, it } from "vitest";
 import { MAX_DETAIL_CHARS, redactDetails, redactText } from "../src/redact.js";
 import { classifyRemoteFailure } from "../src/repo-queries.js";

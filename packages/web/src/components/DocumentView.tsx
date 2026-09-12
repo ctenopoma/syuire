@@ -17,7 +17,7 @@ import {
   type Operation,
   type Snapshot,
   type SourceRange,
-} from "@akaire/core";
+} from "@syuire/core";
 import { MarkdownRenderer, type RendererContext } from "./MarkdownRenderer";
 import { CommentSheet } from "./CommentSheet";
 import { ThreadPanel } from "./ThreadPanel";

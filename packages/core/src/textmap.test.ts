@@ -139,7 +139,7 @@ describe("buildTextMap", () => {
     expect(sourceOffsetAt(todo, 0)).toBe(src.indexOf("todo"));
   });
 
-  it("excludes akaire markers from display text but keeps other html", () => {
+  it("excludes syuire markers from display text but keeps other html", () => {
     const src =
       'foo <!-- @comment{"schemaVersion":1,"id":"x"} -->bar <!-- note --> baz\n\n<!-- @comment{"schemaVersion":1,"id":"y"} -->\npara';
     const tm = expectConsistent(src);

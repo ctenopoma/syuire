@@ -18,7 +18,7 @@ import {
   stripBlockersForSource,
   stripMarkers,
   type SetStateOp,
-} from "@akaire/core";
+} from "@syuire/core";
 import { LocalGitAdapter } from "../src/local-git-adapter.js";
 import { git, makeFixture, uuid } from "./helpers.js";
 
@@ -48,7 +48,7 @@ describe("scenario: review round trip through git", () => {
       base,
       changes: [{ path: PATH, text: applied.source }],
       batchId: batch1,
-      message: formatCommitMessage("akaire: 朱 1 件", batch1),
+      message: formatCommitMessage("syuire: 朱 1 件", batch1),
     });
     expect(r1.status).toBe("committed");
     await adapter.push();
@@ -109,7 +109,7 @@ describe("scenario: review round trip through git", () => {
       base,
       changes: [{ path: PATH, text: applied2.source }],
       batchId: batch2,
-      message: formatCommitMessage("akaire: 解決 1 件", batch2),
+      message: formatCommitMessage("syuire: 解決 1 件", batch2),
     });
     expect(r2).toMatchObject({ status: "committed", localReflection: "complete" });
     expect(await adapter.findBatchCommit(batch2)).toBe(r2.status === "committed" ? r2.commitId : null);
@@ -129,11 +129,11 @@ describe("scenario: review round trip through git", () => {
         { path: logPath, text: renderReviewLog({ originalPath: PATH, baseCommitId: base.revision, batchId: batch3, strippedAt: new Date(), markers: doc.markers }) },
       ],
       batchId: batch3,
-      message: formatCommitMessage("akaire: 刷り出し", batch3),
+      message: formatCommitMessage("syuire: 刷り出し", batch3),
     });
     expect(r3).toMatchObject({ status: "committed", localReflection: "complete" });
     const stripped = (await adapter.read([PATH])).files[PATH]!.text;
-    // The external clone committed CRLF; akaire preserves whatever line endings the file has.
+    // The external clone committed CRLF; syuire preserves whatever line endings the file has.
     expect(stripped.replace(/\r\n/g, "\n")).toBe(BODY.replace("納期は10日", "納期は30日"));
     expect(stripped.includes("\r\n")).toBe(source.includes("\r\n"));
     const log = (await adapter.read([logPath])).files[logPath]!.text;

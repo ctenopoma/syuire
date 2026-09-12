@@ -3,7 +3,7 @@
  * 返信 / 解決 / 再オープン / 対象を再指定 actions (DESIGN.md 5.3, 7.3).
  */
 import type { VNode } from "preact";
-import type { Comment } from "@akaire/core";
+import type { Comment } from "@syuire/core";
 
 export interface ThreadPanelProps {
   number: number;

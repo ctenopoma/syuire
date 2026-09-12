@@ -1,6 +1,6 @@
 name: Deploy web app to GitHub Pages
 
-# Static delivery of the akaire web bundle only (DESIGN.md section 3).
+# Static delivery of the syuire web bundle only (DESIGN.md section 3).
 # No repository data, tokens or user information is involved.
 
 on:
@@ -27,8 +27,8 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm run build -w @akaire/core
-      - run: npm run build -w @akaire/web
+      - run: npm run build -w @syuire/core
+      - run: npm run build -w @syuire/web
       - uses: actions/upload-pages-artifact@v3
         with:
           path: packages/web/dist

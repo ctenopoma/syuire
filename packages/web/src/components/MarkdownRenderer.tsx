@@ -11,13 +11,13 @@
  *   a repository image is fetched only when the reader presses 「読み込む」, and
  *   then only from the revision that is being read. The object URL it produces
  *   is revoked when the image is replaced or unmounted.
- * - akaire markers render as a numbered badge; blocks carrying markers get a
+ * - syuire markers render as a numbered badge; blocks carrying markers get a
  *   left gutter with a vertical rule and the numbers.
  */
 import { useEffect, useState } from "preact/hooks";
 import type { JSX, VNode } from "preact";
 import type { Nodes, Parent, Root } from "mdast";
-import { MARKER_PREFIX, runsInRange, type TextMap } from "@akaire/core";
+import { MARKER_PREFIX, runsInRange, type TextMap } from "@syuire/core";
 
 export interface RendererContext {
   tm: TextMap;

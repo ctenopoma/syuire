@@ -6,7 +6,7 @@
  * through a shell and never by concatenating a command string.
  */
 
-import { AdapterError } from "@akaire/core";
+import { AdapterError } from "@syuire/core";
 import { execFile } from "node:child_process";
 import { redactText } from "./redact.js";
 

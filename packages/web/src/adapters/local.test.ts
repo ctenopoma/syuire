@@ -1,4 +1,4 @@
-import { AdapterError } from "@akaire/core";
+import { AdapterError } from "@syuire/core";
 import { describe, expect, it, vi } from "vitest";
 import { LocalAdapterClient } from "./local.js";
 
@@ -51,7 +51,7 @@ describe("LocalAdapterClient", () => {
       base: { revision: "base1", files: {} },
       changes: [{ path: "docs/a.md", text: "x" }],
       batchId: "11111111-2222-3333-4444-555555555555",
-      message: "akaire: save\n\nAkaire-Batch: 11111111-2222-3333-4444-555555555555\n",
+      message: "syuire: save\n\nsyuire-Batch: 11111111-2222-3333-4444-555555555555\n",
     });
 
     expect(result).toEqual({ status: "committed", commitId: "cafe", localReflection: "complete" });

@@ -8,7 +8,7 @@
  * that reaches the filesystem goes through {@link resolveRepoPath}.
  */
 
-import { AdapterError } from "@akaire/core";
+import { AdapterError } from "@syuire/core";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 

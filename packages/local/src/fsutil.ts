@@ -30,7 +30,7 @@ export async function fileFingerprint(absPath: string): Promise<string | null> {
 export async function writeFileAtomic(absPath: string, bytes: Uint8Array): Promise<void> {
   const dir = path.dirname(absPath);
   await fs.mkdir(dir, { recursive: true });
-  const tmp = path.join(dir, `.${path.basename(absPath)}.akaire-${randomBytes(6).toString("hex")}.tmp`);
+  const tmp = path.join(dir, `.${path.basename(absPath)}.syuire-${randomBytes(6).toString("hex")}.tmp`);
   let handle: fs.FileHandle | undefined;
   try {
     handle = await fs.open(tmp, "wx");

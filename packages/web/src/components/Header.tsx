@@ -3,7 +3,7 @@
  * (DESIGN.md 6, 4.2).
  */
 import type { VNode } from "preact";
-import type { SyncStatus } from "@akaire/core";
+import type { SyncStatus } from "@syuire/core";
 import { syncStateLabel } from "../lib/messages";
 
 export interface HeaderProps {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AdapterError, formatCommitMessage } from "@akaire/core";
+import { AdapterError, formatCommitMessage } from "@syuire/core";
 import { GitHubAdapter } from "./github.js";
 
 // ---------------------------------------------------------------------------

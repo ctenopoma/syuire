@@ -7,7 +7,7 @@
  * - コミット済み・ローカル反映要復旧: 再コミットしない。新規保存・pull・push 禁止.
  */
 import type { VNode } from "preact";
-import type { LocalRecoveryInfo } from "@akaire/core";
+import type { LocalRecoveryInfo } from "@syuire/core";
 import { recoveryPhaseLabel } from "../lib/messages";
 
 export interface RecoveryPanelProps {

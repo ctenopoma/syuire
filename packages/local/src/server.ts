@@ -7,7 +7,7 @@
  * Only `node:http`; no framework, no CORS headers, no shell.
  */
 
-import { AdapterError, type AdapterErrorKind } from "@akaire/core";
+import { AdapterError, type AdapterErrorKind } from "@syuire/core";
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import * as fs from "node:fs/promises";
 import * as http from "node:http";
@@ -69,11 +69,11 @@ const CONTENT_TYPES: Record<string, string> = {
 };
 
 const PLACEHOLDER_HTML = `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>akaire</title>
+<html lang="en"><head><meta charset="utf-8"><title>syuire</title>
 <style>body{font:14px system-ui,sans-serif;margin:3rem auto;max-width:40rem;line-height:1.6}</style>
 </head><body>
-<h1>akaire</h1>
-<p>The web bundle is not built. Run <code>npm run build -w @akaire/web</code> and reload.</p>
+<h1>syuire</h1>
+<p>The web bundle is not built. Run <code>npm run build -w @syuire/web</code> and reload.</p>
 <p>The local API is running; keep the token from the launcher output.</p>
 </body></html>
 `;

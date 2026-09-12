@@ -2,8 +2,8 @@
  * Japanese wording for adapter error kinds, selection failures and conflict
  * reasons. Kept in one place so no raw reason string reaches the UI.
  */
-import type { AdapterErrorKind, SyncState } from "@akaire/core";
-import type { SelectionFailure } from "@akaire/core";
+import type { AdapterErrorKind, SyncState } from "@syuire/core";
+import type { SelectionFailure } from "@syuire/core";
 
 export function selectionFailureMessage(reason: SelectionFailure): string {
   switch (reason) {

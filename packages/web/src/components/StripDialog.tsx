@@ -16,7 +16,7 @@ import {
   stripMarkers,
   type RepositoryAdapter,
   type Snapshot,
-} from "@akaire/core";
+} from "@syuire/core";
 import { errorKind, errorMessage } from "../lib/save";
 import { adapterErrorMessage } from "../lib/messages";
 
@@ -177,7 +177,7 @@ export function StripDialog(props: StripDialogProps): VNode {
           ],
           batchId: preview.batchId,
           message: formatCommitMessage(
-            `akaire: 刷り出し ${preview.markerCount} 件`,
+            `syuire: 刷り出し ${preview.markerCount} 件`,
             preview.batchId,
           ),
         });

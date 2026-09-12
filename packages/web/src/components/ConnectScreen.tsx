@@ -67,7 +67,7 @@ export function ConnectScreen(props: ConnectScreenProps): VNode {
 
   return (
     <div class="screen connect">
-      <h1>akaire</h1>
+      <h1>syuire</h1>
       <p class="lede">GitHub の作業ブランチに直接つないで、Markdown に朱を入れます。</p>
 
       <form

@@ -12,7 +12,7 @@ export default defineConfig({
   plugins: [preact()],
   resolve: {
     alias: {
-      "@akaire/core": fileURLToPath(new URL("../core/src/index.ts", import.meta.url)),
+      "@syuire/core": fileURLToPath(new URL("../core/src/index.ts", import.meta.url)),
     },
   },
   build: {

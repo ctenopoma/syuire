@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { AddCommentOp, Comment, LocalRecoveryInfo, Operation } from "@akaire/core";
+import type { AddCommentOp, Comment, LocalRecoveryInfo, Operation } from "@syuire/core";
 import {
   loadPendingBatch,
   loadQueueFrom,
@@ -91,10 +91,10 @@ const recoveryInfo: LocalRecoveryInfo = {
 describe("storage keys", () => {
   it("is derived from mode, repo, branch and path", () => {
     expect(queueStorageKey(context)).toBe(
-      "akaire.queue:github:acme%2Fdocs:feature%2Fx:docs%2Ffoo.md",
+      "syuire.queue:github:acme%2Fdocs:feature%2Fx:docs%2Ffoo.md",
     );
     expect(pendingBatchStorageKey(context)).toBe(
-      "akaire.batch:github:acme%2Fdocs:feature%2Fx:docs%2Ffoo.md",
+      "syuire.batch:github:acme%2Fdocs:feature%2Fx:docs%2Ffoo.md",
     );
   });
 
@@ -106,7 +106,7 @@ describe("storage keys", () => {
 
   it("keys the recovery mirror by repository and branch, not by file", () => {
     expect(recoveryStorageKey(repoContext)).toBe(
-      "akaire.recovery:local:C%3A%2Fwork%2Fclone:feature%2Fx",
+      "syuire.recovery:local:C%3A%2Fwork%2Fclone:feature%2Fx",
     );
     expect(recoveryStorageKey({ ...repoContext, branch: "main" })).not.toBe(
       recoveryStorageKey(repoContext),
@@ -151,7 +151,7 @@ describe("serialisation", () => {
 
     const broken = parseQueue(
       JSON.stringify({
-        format: "akaire.queue",
+        format: "syuire.queue",
         version: 1,
         context,
         baseRevision: "abc123",
@@ -170,12 +170,12 @@ describe("serialisation", () => {
     expect(parseQueue("not json").ok).toBe(false);
     expect(parseQueue(JSON.stringify({ format: "other" })).ok).toBe(false);
     expect(
-      parseQueue(JSON.stringify({ format: "akaire.queue", version: 99, context, baseRevision: "a", ops: [] })).ok,
+      parseQueue(JSON.stringify({ format: "syuire.queue", version: 99, context, baseRevision: "a", ops: [] })).ok,
     ).toBe(false);
     expect(
       parseQueue(
         JSON.stringify({
-          format: "akaire.queue",
+          format: "syuire.queue",
           version: 1,
           context,
           baseRevision: "a",
@@ -185,7 +185,7 @@ describe("serialisation", () => {
     ).toBe(false);
     expect(
       parseQueue(
-        JSON.stringify({ format: "akaire.queue", version: 1, context, ops: [] }),
+        JSON.stringify({ format: "syuire.queue", version: 1, context, ops: [] }),
       ).ok,
     ).toBe(false);
   });

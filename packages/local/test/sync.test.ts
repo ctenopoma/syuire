@@ -1,4 +1,4 @@
-import { formatCommitMessage } from "@akaire/core";
+import { formatCommitMessage } from "@syuire/core";
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -102,7 +102,7 @@ describe("LocalGitAdapter sync", () => {
       base,
       changes: [{ path: BODY, text: "# A\n\nsaved locally.\n" }],
       batchId,
-      message: formatCommitMessage("akaire: save", batchId),
+      message: formatCommitMessage("syuire: save", batchId),
     });
     if (result.status !== "committed") throw new Error("unreachable");
 
@@ -134,7 +134,7 @@ describe("LocalGitAdapter sync", () => {
         base,
         changes: [{ path: BODY, text: "x\n" }],
         batchId,
-        message: formatCommitMessage("akaire: save", batchId),
+        message: formatCommitMessage("syuire: save", batchId),
       }),
     ).rejects.toMatchObject({ kind: "repo-state" });
   });
@@ -146,13 +146,13 @@ describe("LocalGitAdapter sync", () => {
     expect(await fs.realpath(info.repoRoot)).toBe(await fs.realpath(fx.clone));
     expect(info.branch).toBe("main");
     expect(info.upstream).toBe("origin/main");
-    expect(info.authorName).toBe("Akaire Test");
+    expect(info.authorName).toBe("syuire Test");
     expect(info.authorEmail).toBe("test@example.invalid");
     expect(info.head).toMatch(/^[0-9a-f]{40,64}$/);
   });
 
   it("rejects opening a directory that is not a work tree", async () => {
-    const dir = await fs.mkdtemp(path.join(await fs.realpath(os.tmpdir()), "akaire-nonrepo-"));
+    const dir = await fs.mkdtemp(path.join(await fs.realpath(os.tmpdir()), "syuire-nonrepo-"));
     try {
       await expect(LocalGitAdapter.open(dir)).rejects.toMatchObject({ kind: "repo-state" });
     } finally {

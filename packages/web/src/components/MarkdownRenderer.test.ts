@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildTextMap, markerStatuses, parseDocument } from "@akaire/core";
+import { buildTextMap, markerStatuses, parseDocument } from "@syuire/core";
 import type { VNode } from "preact";
 import {
   MarkdownRenderer,

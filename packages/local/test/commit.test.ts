@@ -1,4 +1,4 @@
-import { AdapterError, extractBatchId, formatCommitMessage } from "@akaire/core";
+import { AdapterError, extractBatchId, formatCommitMessage } from "@syuire/core";
 import { describe, expect, it } from "vitest";
 import { LocalGitAdapter } from "../src/local-git-adapter.js";
 import { git, gitRaw, makeFixture, uuid } from "./helpers.js";
@@ -25,9 +25,9 @@ describe("LocalGitAdapter.commit", () => {
     const batchId = uuid();
     const result = await adapter.commit({
       base,
-      changes: [{ path: BODY, text: `${before!.text}\nadded by akaire.\n` }],
+      changes: [{ path: BODY, text: `${before!.text}\nadded by syuire.\n` }],
       batchId,
-      message: formatCommitMessage("akaire: add a comment", batchId),
+      message: formatCommitMessage("syuire: add a comment", batchId),
     });
 
     expect(result.status).toBe("committed");
@@ -42,7 +42,7 @@ describe("LocalGitAdapter.commit", () => {
     // Three-way match: HEAD, index and work tree agree for the target.
     expect((await gitRaw(fx.clone, ["diff", "--quiet", "HEAD", "--", BODY])).code).toBe(0);
     expect((await gitRaw(fx.clone, ["diff", "--cached", "--quiet", "HEAD", "--", BODY])).code).toBe(0);
-    expect(await fx.read(fx.clone, BODY)).toContain("added by akaire.");
+    expect(await fx.read(fx.clone, BODY)).toContain("added by syuire.");
     expect(await adapter.recovery()).toBeNull();
     expect(await commitFilesOf(fx.clone)).toEqual([BODY]);
   });
@@ -62,7 +62,7 @@ describe("LocalGitAdapter.commit", () => {
       base,
       changes: [{ path: BODY, text: "# A\n\nrewritten.\n" }],
       batchId,
-      message: formatCommitMessage("akaire: save", batchId),
+      message: formatCommitMessage("syuire: save", batchId),
     });
     expect(result.status).toBe("committed");
 
@@ -90,7 +90,7 @@ describe("LocalGitAdapter.commit", () => {
         { path: logPath, text: `# review log\n\nbase: ${base.revision}\n` },
       ],
       batchId,
-      message: formatCommitMessage("akaire: strip", batchId),
+      message: formatCommitMessage("syuire: strip", batchId),
     });
 
     expect(result.status).toBe("committed");
@@ -115,7 +115,7 @@ describe("LocalGitAdapter.commit", () => {
         { path: logPath, text: "first log\n" },
       ],
       batchId,
-      message: formatCommitMessage("akaire: strip", batchId),
+      message: formatCommitMessage("syuire: strip", batchId),
     });
     expect(first.status).toBe("committed");
 
@@ -126,7 +126,7 @@ describe("LocalGitAdapter.commit", () => {
         base: base2, // logPath was never read, so this is a new-file intent
         changes: [{ path: logPath, text: "second log\n" }],
         batchId: batch2,
-        message: formatCommitMessage("akaire: strip", batch2),
+        message: formatCommitMessage("syuire: strip", batch2),
       })
       .catch((e: unknown) => e);
     expect(err).toBeInstanceOf(AdapterError);
@@ -141,7 +141,7 @@ describe("LocalGitAdapter.commit", () => {
         base: { revision: base2.revision, files: { ...base2.files, [logPath]: null } },
         changes: [{ path: logPath, text: "third log\n" }],
         batchId: batch3,
-        message: formatCommitMessage("akaire: strip", batch3),
+        message: formatCommitMessage("syuire: strip", batch3),
       }),
     ).rejects.toMatchObject({ kind: "validation" });
 
@@ -152,7 +152,7 @@ describe("LocalGitAdapter.commit", () => {
       base: base3,
       changes: [{ path: logPath, text: "edited log\n" }],
       batchId: batch4,
-      message: formatCommitMessage("akaire: edit the log", batch4),
+      message: formatCommitMessage("syuire: edit the log", batch4),
     });
     expect(ok.status).toBe("committed");
     expect(await fx.read(fx.clone, logPath)).toBe("edited log\n");
@@ -168,9 +168,9 @@ describe("LocalGitAdapter.commit", () => {
     await expect(
       adapter.commit({
         base,
-        changes: [{ path: BODY, text: "# A\n\nfrom akaire.\n" }],
+        changes: [{ path: BODY, text: "# A\n\nfrom syuire.\n" }],
         batchId,
-        message: formatCommitMessage("akaire: save", batchId),
+        message: formatCommitMessage("syuire: save", batchId),
       }),
     ).rejects.toMatchObject({ kind: "worktree-dirty" });
     // The work tree was not touched.
@@ -193,7 +193,7 @@ describe("LocalGitAdapter.commit", () => {
         base,
         changes: [{ path: BODY, text: `${original}extra\n` }],
         batchId,
-        message: formatCommitMessage("akaire: save", batchId),
+        message: formatCommitMessage("syuire: save", batchId),
       }),
     ).rejects.toMatchObject({ kind: "worktree-dirty" });
   });
@@ -210,9 +210,9 @@ describe("LocalGitAdapter.commit", () => {
     await expect(
       adapter.commit({
         base,
-        changes: [{ path: BODY, text: "# A\n\nfrom akaire.\n" }],
+        changes: [{ path: BODY, text: "# A\n\nfrom syuire.\n" }],
         batchId,
-        message: formatCommitMessage("akaire: save", batchId),
+        message: formatCommitMessage("syuire: save", batchId),
       }),
     ).rejects.toMatchObject({ kind: "conflict" });
   });
@@ -236,7 +236,7 @@ describe("LocalGitAdapter.commit", () => {
           { path: logPath, text: "log\n" },
         ],
         batchId,
-        message: formatCommitMessage("akaire: strip", batchId),
+        message: formatCommitMessage("syuire: strip", batchId),
       })
       .catch((e: unknown) => e);
     expect(err).toBeInstanceOf(AdapterError);
@@ -265,9 +265,9 @@ describe("LocalGitAdapter.commit", () => {
     const batchId = uuid();
     const result = await adapter.commit({
       base,
-      changes: [{ path: BODY, text: `${base.files[BODY]!.text}akaire.\n` }],
+      changes: [{ path: BODY, text: `${base.files[BODY]!.text}syuire.\n` }],
       batchId,
-      message: formatCommitMessage("akaire: save", batchId),
+      message: formatCommitMessage("syuire: save", batchId),
     });
     expect(result.status).toBe("committed");
     if (result.status !== "committed") throw new Error("unreachable");
@@ -278,10 +278,10 @@ describe("LocalGitAdapter.commit", () => {
     // sees no line-ending churn), the committed blob is LF-only, and the
     // three-way match (work tree / index / HEAD) holds byte for byte.
     const afterRaw = await fx.read(fx.clone, BODY);
-    expect(afterRaw).toBe("# A\r\n\r\nfirst paragraph.\r\nakaire.\r\n");
+    expect(afterRaw).toBe("# A\r\n\r\nfirst paragraph.\r\nsyuire.\r\n");
     const committedBlob = await git(fx.clone, ["show", `HEAD:${BODY}`]);
     expect(committedBlob).not.toContain("\r\n");
-    expect(committedBlob).toBe("# A\n\nfirst paragraph.\nakaire.\n");
+    expect(committedBlob).toBe("# A\n\nfirst paragraph.\nsyuire.\n");
     expect((await git(fx.clone, ["status", "--porcelain", "--", BODY])).trim()).toBe("");
     expect((await gitRaw(fx.clone, ["diff", "--cached", "--quiet", "HEAD", "--", BODY])).code).toBe(0);
   });
@@ -302,11 +302,11 @@ describe("LocalGitAdapter.commit", () => {
     const result = await adapter.commit({
       base,
       changes: [
-        { path: BODY, text: `${base.files[BODY]!.text}akaire.\n` },
+        { path: BODY, text: `${base.files[BODY]!.text}syuire.\n` },
         { path: logPath, text: logText },
       ],
       batchId,
-      message: formatCommitMessage("akaire: save", batchId),
+      message: formatCommitMessage("syuire: save", batchId),
     });
     expect(result.status).toBe("committed");
     if (result.status !== "committed") throw new Error("unreachable");
@@ -330,12 +330,12 @@ describe("LocalGitAdapter.commit", () => {
     expect(before).not.toContain("\r");
 
     const batchId = uuid();
-    const newText = `${before}akaire.\n`;
+    const newText = `${before}syuire.\n`;
     const result = await adapter.commit({
       base,
       changes: [{ path: BODY, text: newText }],
       batchId,
-      message: formatCommitMessage("akaire: save", batchId),
+      message: formatCommitMessage("syuire: save", batchId),
     });
     expect(result.status).toBe("committed");
     if (result.status !== "committed") throw new Error("unreachable");
@@ -363,7 +363,7 @@ describe("LocalGitAdapter.commit", () => {
         base,
         changes: [{ path: BODY, text: "x\n" }],
         batchId,
-        message: formatCommitMessage("akaire: save", batchId),
+        message: formatCommitMessage("syuire: save", batchId),
       }),
     ).rejects.toMatchObject({ kind: "repo-state" });
   });
@@ -417,7 +417,7 @@ describe("LocalGitAdapter.commit", () => {
       base,
       changes: [{ path: BODY, text: "# A\n\nsaved.\n" }],
       batchId,
-      message: formatCommitMessage("akaire: save", batchId),
+      message: formatCommitMessage("syuire: save", batchId),
     });
     if (result.status !== "committed") throw new Error("unreachable");
     expect(await adapter.findBatchCommit(batchId)).toBe(result.commitId);

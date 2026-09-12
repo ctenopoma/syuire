@@ -6,13 +6,13 @@
  * result must be confirmed against the branch history before anything is
  * re-committed, and the batch id is reused so comment ids never change.
  */
-import { AdapterError, applyOperations, formatCommitMessage } from "@akaire/core";
+import { AdapterError, applyOperations, formatCommitMessage } from "@syuire/core";
 import type {
   AdapterErrorKind,
   Operation,
   RepositoryAdapter,
   Snapshot,
-} from "@akaire/core";
+} from "@syuire/core";
 
 export interface BatchAwareAdapter extends RepositoryAdapter {
   findBatchCommit(batchId: string): Promise<string | null>;
@@ -53,7 +53,7 @@ export type SaveResult =
   | { status: "error"; base: Snapshot; kind: AdapterErrorKind; message: string };
 
 export function defaultSummary(opCount: number): string {
-  return `akaire: 朱 ${opCount} 件`;
+  return `syuire: 朱 ${opCount} 件`;
 }
 
 function fileText(base: Snapshot, path: string): string | null {

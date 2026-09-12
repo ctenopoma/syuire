@@ -2,7 +2,7 @@
  * Directory / Markdown file browser over `adapter.list(dir, head)`.
  */
 import type { VNode } from "preact";
-import type { Entry } from "@akaire/core";
+import type { Entry } from "@syuire/core";
 
 export interface FileBrowserProps {
   dir: string;

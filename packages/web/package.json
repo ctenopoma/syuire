@@ -1,5 +1,5 @@
 {
-  "name": "@akaire/web",
+  "name": "@syuire/web",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@akaire/core": "*",
+    "@syuire/core": "*",
     "hast-util-to-html": "^9.0.5",
     "mdast-util-to-hast": "^13.2.0",
     "preact": "^10.26.0"

@@ -8,7 +8,7 @@ import {
   type Entry,
   type Operation,
   type Snapshot,
-} from "@akaire/core";
+} from "@syuire/core";
 import { confirmBatch, runSave, type BatchAwareAdapter } from "./save";
 
 const PATH = "docs/foo.md";
@@ -113,7 +113,7 @@ describe("runSave", () => {
     const call = adapter.commitCalls[0];
     expect(call?.changes[0]?.path).toBe(PATH);
     expect(call?.changes[0]?.text).toContain("@comment");
-    expect(call?.message).toContain("akaire: 朱 1 件");
+    expect(call?.message).toContain("syuire: 朱 1 件");
     expect(extractBatchId(call?.message ?? "")).toBe(batchId);
 
     expect(result.status).toBe("committed");

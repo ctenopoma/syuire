@@ -2,7 +2,7 @@
  * Client for the local host layer (DESIGN.md 3, 7.2).
  *
  * The browser UI talks to the same-origin `/api/*` routes served by
- * `@akaire/local`. Every request carries the per-launch session token and is
+ * `@syuire/local`. Every request carries the per-launch session token and is
  * made with `cache: "no-store"` (DESIGN.md 8).
  */
 
@@ -16,7 +16,7 @@ import {
   type LocalRepositoryAdapter,
   type Snapshot,
   type SyncStatus,
-} from "@akaire/core";
+} from "@syuire/core";
 
 export interface LocalRepoInfo {
   repoRoot: string;

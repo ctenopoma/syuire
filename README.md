@@ -1,4 +1,4 @@
-# akaire(朱入れ)
+# syuire(朱入れ)
 
 GitHub を共有の正本とする Markdown 朱入れクライアント。PC と iPad から本文にコメント・返信を付け、Git コミットとして保存する。
 Web は静的 SPA から GitHub に直接アクセスし、Windows は同じ UI とローカル実行層で既存 clone の commit・pull・push を扱う。
@@ -17,7 +17,7 @@ Web は静的 SPA から GitHub に直接アクセスし、Windows は同じ UI 
 packages/
 ├─ core/    # 形式、parse/serialize、表示文字列↔ソース対応、配置、操作再適用、刷り出し
 ├─ web/     # Preact UI、GitHubAdapter、LocalAdapterClient
-└─ local/   # localhost 実行層(UI 配信、既存 clone の Git 操作)、`akaire serve`
+└─ local/   # localhost 実行層(UI 配信、既存 clone の Git 操作)、`syuire serve`
 ```
 
 ## 開発
@@ -31,7 +31,7 @@ npm run build
 Web UI の開発サーバー:
 
 ```bash
-npm run dev -w @akaire/web
+npm run dev -w @syuire/web
 ```
 
 ローカル実行層(既存 clone を指定して起動し、表示された URL をブラウザで開く):

@@ -3,7 +3,7 @@
  * `cwd` and structured arguments; none of them build a command string.
  */
 
-import { AdapterError } from "@akaire/core";
+import { AdapterError } from "@syuire/core";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { runGit, runGitOrThrow, timeoutError, type GitResult } from "./git.js";

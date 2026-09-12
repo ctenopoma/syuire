@@ -5,7 +5,7 @@
  * Only operations, the connection descriptor and the base revision are stored -
  * never the manuscript, never a token.
  */
-import type { LocalRecoveryInfo, Operation } from "@akaire/core";
+import type { LocalRecoveryInfo, Operation } from "@syuire/core";
 
 export type ConnectionMode = "github" | "local";
 
@@ -24,7 +24,7 @@ export interface RepoContext {
   branch: string;
 }
 
-export const QUEUE_FORMAT = "akaire.queue";
+export const QUEUE_FORMAT = "syuire.queue";
 export const QUEUE_VERSION = 1;
 
 export interface QueueEnvelope {
@@ -61,7 +61,7 @@ function encodePart(value: string): string {
 
 export function queueStorageKey(context: QueueContext): string {
   return [
-    "akaire.queue",
+    "syuire.queue",
     context.mode,
     encodePart(context.repoKey),
     encodePart(context.branch),
@@ -71,7 +71,7 @@ export function queueStorageKey(context: QueueContext): string {
 
 export function pendingBatchStorageKey(context: QueueContext): string {
   return [
-    "akaire.batch",
+    "syuire.batch",
     context.mode,
     encodePart(context.repoKey),
     encodePart(context.branch),
@@ -81,7 +81,7 @@ export function pendingBatchStorageKey(context: QueueContext): string {
 
 export function recoveryStorageKey(context: RepoContext): string {
   return [
-    "akaire.recovery",
+    "syuire.recovery",
     context.mode,
     encodePart(context.repoKey),
     encodePart(context.branch),
@@ -138,7 +138,7 @@ export function parseQueue(text: string): ParsedQueue {
   }
   const obj = raw as Partial<QueueEnvelope>;
   if (obj.format !== QUEUE_FORMAT) {
-    return { ok: false, reason: "akaire のキュー書き出しではありません" };
+    return { ok: false, reason: "syuire のキュー書き出しではありません" };
   }
   if (obj.version !== QUEUE_VERSION) {
     return { ok: false, reason: `未対応のバージョンです: ${String(obj.version)}` };

@@ -1,4 +1,4 @@
-import { formatCommitMessage } from "@akaire/core";
+import { formatCommitMessage } from "@syuire/core";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -9,7 +9,7 @@ const BODY = "docs/a.md";
 const ORIGINAL = "# A\n\nfirst paragraph.\n";
 
 const FAILING_HOOK = `#!/bin/sh
-if [ -f "$(git rev-parse --git-dir)/akaire-fail" ]; then
+if [ -f "$(git rev-parse --git-dir)/syuire-fail" ]; then
   echo "pre-commit refused" >&2
   exit 1
 fi
@@ -22,7 +22,7 @@ exit 0
 `;
 
 async function marker(fx: Fixture, on: boolean): Promise<void> {
-  const file = path.join(fx.clone, ".git", "akaire-fail");
+  const file = path.join(fx.clone, ".git", "syuire-fail");
   if (on) await fs.writeFile(file, "");
   else await fs.rm(file, { force: true });
 }
@@ -44,11 +44,11 @@ describe("LocalGitAdapter recovery", () => {
     const input = {
       base,
       changes: [
-        { path: BODY, text: `${ORIGINAL}akaire line.\n` },
+        { path: BODY, text: `${ORIGINAL}syuire line.\n` },
         { path: logPath, text: "log body\n" },
       ],
       batchId,
-      message: formatCommitMessage("akaire: save", batchId),
+      message: formatCommitMessage("syuire: save", batchId),
     };
     const commitsBefore = await commitCount(fx.clone);
 
@@ -59,7 +59,7 @@ describe("LocalGitAdapter recovery", () => {
     expect(rec?.batchId).toBe(batchId);
     expect(rec?.paths.sort()).toEqual([BODY, logPath].sort());
     // The prepared content is in the work tree and the log has an intent-to-add entry.
-    expect(await fx.read(fx.clone, BODY)).toBe(`${ORIGINAL}akaire line.\n`);
+    expect(await fx.read(fx.clone, BODY)).toBe(`${ORIGINAL}syuire line.\n`);
     expect((await git(fx.clone, ["ls-files", "--", logPath])).trim()).toBe(logPath);
     expect(commitsBefore).toBe(await commitCount(fx.clone));
 
@@ -70,7 +70,7 @@ describe("LocalGitAdapter recovery", () => {
     if (result.status !== "committed") throw new Error("unreachable");
     expect(result.localReflection).toBe("complete");
     expect(await commitCount(fx.clone)).toBe(commitsBefore + 1);
-    expect(await fx.read(fx.clone, BODY)).toBe(`${ORIGINAL}akaire line.\n`);
+    expect(await fx.read(fx.clone, BODY)).toBe(`${ORIGINAL}syuire line.\n`);
     expect(await adapter.recovery()).toBeNull();
     expect((await git(fx.clone, ["status", "--porcelain"])).trim()).toBe("");
   });
@@ -85,9 +85,9 @@ describe("LocalGitAdapter recovery", () => {
     const batchId = uuid();
     const input = {
       base,
-      changes: [{ path: BODY, text: `${ORIGINAL}akaire line.\n` }],
+      changes: [{ path: BODY, text: `${ORIGINAL}syuire line.\n` }],
       batchId,
-      message: formatCommitMessage("akaire: save", batchId),
+      message: formatCommitMessage("syuire: save", batchId),
     };
     await expect(adapter.commit(input)).rejects.toMatchObject({ kind: "commit-failed" });
 
@@ -113,11 +113,11 @@ describe("LocalGitAdapter recovery", () => {
       adapter.commit({
         base,
         changes: [
-          { path: BODY, text: `${ORIGINAL}akaire line.\n` },
+          { path: BODY, text: `${ORIGINAL}syuire line.\n` },
           { path: logPath, text: "log body\n" },
         ],
         batchId,
-        message: formatCommitMessage("akaire: save", batchId),
+        message: formatCommitMessage("syuire: save", batchId),
       }),
     ).rejects.toMatchObject({ kind: "commit-failed" });
 
@@ -138,7 +138,7 @@ describe("LocalGitAdapter recovery", () => {
       base: base2,
       changes: [{ path: BODY, text: `${ORIGINAL}second try.\n` }],
       batchId: batch2,
-      message: formatCommitMessage("akaire: save", batch2),
+      message: formatCommitMessage("syuire: save", batch2),
     });
     expect(result.status).toBe("committed");
   });
@@ -152,9 +152,9 @@ describe("LocalGitAdapter recovery", () => {
     const batchId = uuid();
     const result = await adapter.commit({
       base,
-      changes: [{ path: BODY, text: `${ORIGINAL}akaire line.\n` }],
+      changes: [{ path: BODY, text: `${ORIGINAL}syuire line.\n` }],
       batchId,
-      message: formatCommitMessage("akaire: save", batchId),
+      message: formatCommitMessage("syuire: save", batchId),
     });
 
     expect(result.status).toBe("committed");
@@ -174,7 +174,7 @@ describe("LocalGitAdapter recovery", () => {
         base: await adapter.read([BODY]),
         changes: [{ path: BODY, text: "anything\n" }],
         batchId: uuid(),
-        message: formatCommitMessage("akaire: save", uuid()),
+        message: formatCommitMessage("syuire: save", uuid()),
       }),
     ).rejects.toMatchObject({ kind: "worktree-recovery" });
     await expect(adapter.push()).rejects.toMatchObject({ kind: "worktree-recovery" });
@@ -205,18 +205,18 @@ describe("LocalGitAdapter recovery", () => {
       adapter.commit({
         base,
         changes: [
-          { path: BODY, text: `${ORIGINAL}akaire line.\n` },
+          { path: BODY, text: `${ORIGINAL}syuire line.\n` },
           { path: logPath, text: "log body\n" },
         ],
         batchId,
-        message: formatCommitMessage("akaire: strip", batchId),
+        message: formatCommitMessage("syuire: strip", batchId),
       }),
     ).rejects.toMatchObject({ kind: "worktree-recovery" });
 
     const rec = await adapter.recovery();
     expect(rec?.phase).toBe("prepared-uncommitted");
     // The first file was written, the second was not, and no commit was made.
-    expect(await fx.read(fx.clone, BODY)).toBe(`${ORIGINAL}akaire line.\n`);
+    expect(await fx.read(fx.clone, BODY)).toBe(`${ORIGINAL}syuire line.\n`);
     expect((await git(fx.clone, ["log", "-1", "--format=%s"])).trim()).toBe("add a blocking file");
 
     expect(await adapter.cancelPrepared()).toBeNull();

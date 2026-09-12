@@ -7,7 +7,7 @@ import { computePlacement, findAnchor, insertMarker, prepareSelection } from "./
 
 const M = '<!-- @comment{"schemaVersion":1,"id":"t"} -->';
 
-/** Structure of a Markdown document, ignoring akaire markers and positions. */
+/** Structure of a Markdown document, ignoring syuire markers and positions. */
 function shape(src: string): string {
   const tree = fromMarkdown(src, { extensions: [gfm()], mdastExtensions: [gfmFromMarkdown()] });
   const walk = (n: any): string => {

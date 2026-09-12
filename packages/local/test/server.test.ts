@@ -112,7 +112,7 @@ describe("local host layer HTTP server", () => {
     expect(reply.headers["access-control-allow-origin"]).toBeUndefined();
     const info = JSON.parse(reply.body);
     expect(info.branch).toBe("main");
-    expect(info.authorName).toBe("Akaire Test");
+    expect(info.authorName).toBe("syuire Test");
   });
 
   it("serves sync, list, read and rejects unsafe paths", async () => {
@@ -220,7 +220,7 @@ describe("local host layer HTTP server", () => {
     const fx = await makeFixture();
     const dist = path.join(fx.root, "dist");
     await fs.mkdir(dist, { recursive: true });
-    await fs.writeFile(path.join(dist, "index.html"), "<!doctype html><title>akaire</title>app");
+    await fs.writeFile(path.join(dist, "index.html"), "<!doctype html><title>syuire</title>app");
     await fs.writeFile(path.join(dist, "app.js"), "console.log(1)\n");
     await fs.writeFile(path.join(fx.root, "secret.txt"), "top secret\n");
 

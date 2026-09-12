@@ -40,7 +40,7 @@ export interface Fixture {
 
 async function configureRepo(repo: string, hooksDir: string, extra: Array<[string, string]> = []): Promise<void> {
   const pairs: Array<[string, string]> = [
-    ["user.name", "Akaire Test"],
+    ["user.name", "syuire Test"],
     ["user.email", "test@example.invalid"],
     ["commit.gpgsign", "false"],
     ["tag.gpgsign", "false"],
@@ -59,7 +59,7 @@ async function configureRepo(repo: string, hooksDir: string, extra: Array<[strin
 export async function makeFixture(
   options: { repoConfig?: Array<[string, string]>; initialFiles?: Record<string, string> } = {},
 ): Promise<Fixture> {
-  const root = await fs.mkdtemp(path.join(await fs.realpath(os.tmpdir()), "akaire-"));
+  const root = await fs.mkdtemp(path.join(await fs.realpath(os.tmpdir()), "syuire-"));
   created.push(root);
   const hooksDir = path.join(root, "hooks");
   await fs.mkdir(hooksDir, { recursive: true });
@@ -124,7 +124,7 @@ export async function makeFixture(
       return dir;
     },
     async installHook(repo, name, body) {
-      const dir = path.join(repo, ".git", "akaire-hooks");
+      const dir = path.join(repo, ".git", "syuire-hooks");
       await fs.mkdir(dir, { recursive: true });
       const file = path.join(dir, name);
       await fs.writeFile(file, body, { mode: 0o755 });

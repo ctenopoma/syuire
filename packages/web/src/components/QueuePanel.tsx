@@ -4,7 +4,7 @@
  */
 import { useRef } from "preact/hooks";
 import type { VNode } from "preact";
-import type { Operation } from "@akaire/core";
+import type { Operation } from "@syuire/core";
 import { describeOperation } from "../lib/queue";
 
 export interface QueuePanelProps {

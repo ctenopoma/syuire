@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * `akaire serve <clonePath> [--port N] [--no-open]`
+ * `syuire serve <clonePath> [--port N] [--no-open]`
  *
  * DESIGN.md 3: this is only a way to start the UI, not a general-purpose CLI
  * for comment operations.
@@ -61,9 +61,9 @@ export function parseArgs(argv: string[]): ParsedArgs {
   return parsed;
 }
 
-const USAGE = `akaire serve <clonePath> [--port N] [--no-open]
+const USAGE = `syuire serve <clonePath> [--port N] [--no-open]
 
-Serves the akaire UI from localhost and operates the given existing clone.
+Serves the syuire UI from localhost and operates the given existing clone.
 `;
 
 /** Open a URL with the platform opener. The URL is always a separate argv item. */
@@ -121,7 +121,7 @@ export async function main(argv: string[]): Promise<number> {
 
   const info = await server.adapter.info();
   const openUrl = `${server.url}/#token=${server.token}`;
-  process.stdout.write(`akaire local host layer\n`);
+  process.stdout.write(`syuire local host layer\n`);
   process.stdout.write(`  repository: ${info.repoRoot}\n`);
   process.stdout.write(`  branch:     ${info.branch ?? "(detached HEAD, read only)"}\n`);
   process.stdout.write(`Open: ${openUrl}\n`);

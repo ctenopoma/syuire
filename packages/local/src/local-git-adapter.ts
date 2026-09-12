@@ -22,7 +22,7 @@ import {
   type Snapshot,
   type SyncState,
   type SyncStatus,
-} from "@akaire/core";
+} from "@syuire/core";
 import * as os from "node:os";
 import * as path from "node:path";
 import * as fsp from "node:fs/promises";
@@ -358,7 +358,7 @@ export class LocalGitAdapter implements LocalRepositoryAdapter {
     if (trailerBatch !== input.batchId) {
       throw new AdapterError(
         "validation",
-        "the commit message must carry an Akaire-Batch trailer matching batchId",
+        "the commit message must carry an syuire-Batch trailer matching batchId",
       );
     }
     const seen = new Set<string>();
@@ -521,7 +521,7 @@ export class LocalGitAdapter implements LocalRepositoryAdapter {
       if (now !== p.beforeFingerprint) {
         throw new AdapterError(
           "worktree-recovery",
-          `${p.repoPath} was modified outside akaire while the save was being prepared`,
+          `${p.repoPath} was modified outside syuire while the save was being prepared`,
           { path: p.repoPath, phase: "prepared-uncommitted" },
         );
       }
@@ -640,7 +640,7 @@ export class LocalGitAdapter implements LocalRepositoryAdapter {
 
     // Step 7: commit. Hooks and signing apply as usual.
     const msgFile = path.join(
-      await fsp.mkdtemp(path.join(os.tmpdir(), "akaire-msg-")),
+      await fsp.mkdtemp(path.join(os.tmpdir(), "syuire-msg-")),
       "COMMIT_MSG",
     );
     let result: GitResult;
@@ -724,7 +724,7 @@ export class LocalGitAdapter implements LocalRepositoryAdapter {
     }
     const body = await this.#git(["cat-file", "-p", commitId]);
     if (body.code !== 0 || extractBatchId(body.stdout) !== batch.batchId) {
-      return `the commit message does not carry Akaire-Batch: ${batch.batchId}`;
+      return `the commit message does not carry syuire-Batch: ${batch.batchId}`;
     }
     for (const p of batch.paths) {
       const entry = await lsTree(this.repoRoot, commitId, p.repoPath);
@@ -769,7 +769,7 @@ export class LocalGitAdapter implements LocalRepositoryAdapter {
         if (current !== p.afterBlob && current !== p.beforeBlob) {
           throw new AdapterError(
             "worktree-recovery",
-            `${p.repoPath} changed outside akaire; cancel would discard that change`,
+            `${p.repoPath} changed outside syuire; cancel would discard that change`,
             { path: p.repoPath },
           );
         }

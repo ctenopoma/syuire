@@ -7,16 +7,16 @@
  */
 import type { StorageLike } from "./queue";
 
-export const LAST_CONNECTION_KEY = "akaire.lastConnection";
-export const PAT_KEY = "akaire.pat";
-export const PAT_OPT_IN_KEY = "akaire.patOptIn";
+export const LAST_CONNECTION_KEY = "syuire.lastConnection";
+export const PAT_KEY = "syuire.pat";
+export const PAT_OPT_IN_KEY = "syuire.patOptIn";
 /**
  * Marks that this tab was opened from the local launcher. The session token is
  * stripped out of the URL as soon as it has been read (DESIGN.md 8: tokens
  * never stay in the app URL), so after a reload there is nothing to reconnect
  * with; the flag is what lets the UI say so instead of showing the GitHub form.
  */
-export const LOCAL_SESSION_KEY = "akaire.localSession";
+export const LOCAL_SESSION_KEY = "syuire.localSession";
 
 export interface LastConnection {
   owner: string;
