@@ -1,5 +1,7 @@
 # syuire(シュイレ・朱入れ)
 
+[WEB Pages](https://ctenopoma.github.io/syuire/)
+
 GitHub を共有の正本とする Markdown 朱入れクライアント。PC と iPad から本文にコメント・返信を付け、Git コミットとして保存する。
 Web は静的 SPA から GitHub に直接アクセスし、Windows は同じ UI とローカル実行層で既存 clone の commit・pull・push を扱う。
 業務データは Git リポジトリに置き、サービス側に DB や利用者のリポジトリ情報を持たない。AI による修正・自動実行は外部システムで行う。
