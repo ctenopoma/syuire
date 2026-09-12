@@ -358,7 +358,7 @@ export class LocalGitAdapter implements LocalRepositoryAdapter {
     if (trailerBatch !== input.batchId) {
       throw new AdapterError(
         "validation",
-        "the commit message must carry an syuire-Batch trailer matching batchId",
+        "the commit message must carry an Syuire-Batch trailer matching batchId",
       );
     }
     const seen = new Set<string>();
@@ -724,7 +724,7 @@ export class LocalGitAdapter implements LocalRepositoryAdapter {
     }
     const body = await this.#git(["cat-file", "-p", commitId]);
     if (body.code !== 0 || extractBatchId(body.stdout) !== batch.batchId) {
-      return `the commit message does not carry syuire-Batch: ${batch.batchId}`;
+      return `the commit message does not carry Syuire-Batch: ${batch.batchId}`;
     }
     for (const p of batch.paths) {
       const entry = await lsTree(this.repoRoot, commitId, p.repoPath);

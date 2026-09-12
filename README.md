@@ -1,4 +1,4 @@
-# syuire(朱入れ)
+# syuire(シュイレ・朱入れ)
 
 GitHub を共有の正本とする Markdown 朱入れクライアント。PC と iPad から本文にコメント・返信を付け、Git コミットとして保存する。
 Web は静的 SPA から GitHub に直接アクセスし、Windows は同じ UI とローカル実行層で既存 clone の commit・pull・push を扱う。

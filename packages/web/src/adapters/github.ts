@@ -390,7 +390,7 @@ export class GitHubAdapter implements RepositoryAdapter {
   // Extra capabilities used for recovery and authorship (DESIGN.md 5.1, 7.3)
   // -------------------------------------------------------------------
 
-  /** Find a commit on the session branch carrying the syuire-Batch trailer. */
+  /** Find a commit on the session branch carrying the Syuire-Batch trailer. */
   async findBatchCommit(batchId: string): Promise<string | null> {
     const { data } = await this.fetchJson<GitHubCommitListItem[]>(
       "GET",
