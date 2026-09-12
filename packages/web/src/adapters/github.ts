@@ -134,7 +134,9 @@ export class GitHubAdapter implements RepositoryAdapter {
     this.repo = options.repo;
     this.branch = options.branch;
     this.token = options.token.trim();
-    this.fetchImpl = options.fetch ?? fetch;
+    // Browsers require `fetch` to be called with the global as `this`; storing it on the
+    // instance and calling `this.fetchImpl(...)` throws "Illegal invocation" unless bound.
+    this.fetchImpl = options.fetch ?? ((input, init) => globalThis.fetch(input, init));
     this.apiBase = options.apiBase ?? DEFAULT_API_BASE;
   }
 
