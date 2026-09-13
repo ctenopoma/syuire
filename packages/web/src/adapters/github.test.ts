@@ -243,12 +243,44 @@ function createFakeFetch(gh: FakeGitHub, recorder: FetchRecorder): typeof fetch 
       return json(201, { sha });
     }
 
-    // GET /repos/{owner}/{repo}/git/trees/{sha}
+    // GET /repos/{owner}/{repo}/git/trees/{sha}[?recursive=1] (a commit sha resolves to its tree)
     m = path.match(/^\/repos\/([^/]+)\/([^/]+)\/git\/trees\/([^/]+)$/);
     if (m && method === "GET") {
-      const tree = gh.trees.get(m[3] as string);
+      const requested = m[3] as string;
+      const viaCommit = gh.commits.get(requested);
+      const tree = gh.trees.get(viaCommit ? viaCommit.tree : requested);
       if (!tree) return json(404, { message: "Not Found" });
-      return json(200, { sha: tree.sha, tree: tree.tree });
+      if (url.searchParams.get("recursive") !== "1") return json(200, { sha: tree.sha, tree: tree.tree });
+      const flat: Array<FakeTreeEntry & { size?: number }> = [];
+      const walk = (t: FakeTree, prefix: string): void => {
+        for (const e of t.tree) {
+          const p = prefix ? `${prefix}/${e.path}` : e.path;
+          if (e.type === "tree") {
+            flat.push({ ...e, path: p });
+            const child = gh.trees.get(e.sha);
+            if (child) walk(child, p);
+          } else {
+            const bytes = gh.blobBytes(e.sha);
+            flat.push({ ...e, path: p, size: bytes ? bytes.length : 0 });
+          }
+        }
+      };
+      walk(tree, "");
+      return json(200, { sha: tree.sha, tree: flat, truncated: false });
+    }
+
+    // GET /repos/{owner}/{repo}
+    m = path.match(/^\/repos\/([^/]+)\/([^/]+)$/);
+    if (m && method === "GET") {
+      if (m[1] !== OWNER || m[2] !== REPO) return json(404, { message: "Not Found" });
+      return json(200, { default_branch: BRANCH, private: true, permissions: { push: true, pull: true } });
+    }
+
+    // GET /repos/{owner}/{repo}/branches
+    m = path.match(/^\/repos\/([^/]+)\/([^/]+)\/branches$/);
+    if (m && method === "GET") {
+      const names = [...gh.refs.keys()].filter((k) => k.startsWith("heads/")).map((k) => k.slice("heads/".length));
+      return json(200, names.map((name) => ({ name })));
     }
 
     // POST /repos/{owner}/{repo}/git/trees
@@ -1000,5 +1032,40 @@ describe("GitHubAdapter", () => {
     }
     expect(caught).toBeInstanceOf(AdapterError);
     expect((caught as AdapterError).message).not.toContain(TOKEN);
+  });
+});
+
+describe("GitHubAdapter connect-time lookups", () => {
+  it("reports the default branch and push permission", async () => {
+    const gh = new FakeGitHub();
+    gh.seedRepo({ "a.md": "a" });
+    const recorder: FetchRecorder = { urls: [] };
+    const adapter = makeAdapter(gh, recorder);
+    const info = await adapter.repoInfo();
+    expect(info).toEqual({ defaultBranch: BRANCH, canPush: true, isPrivate: true });
+  });
+
+  it("lists branch names", async () => {
+    const gh = new FakeGitHub();
+    gh.seedRepo({ "a.md": "a" });
+    gh.seedRepo({ "b.md": "b" }, "review/x");
+    const recorder: FetchRecorder = { urls: [] };
+    const adapter = makeAdapter(gh, recorder);
+    expect((await adapter.listBranches()).sort()).toEqual([BRANCH, "review/x"]);
+  });
+
+  it("lists the whole revision in one request", async () => {
+    const gh = new FakeGitHub();
+    const head = gh.seedRepo({ "README.md": "r", "docs/guide.md": "g", "docs/img/a.png": new Uint8Array([1, 2]) });
+    const recorder: FetchRecorder = { urls: [] };
+    const adapter = makeAdapter(gh, recorder);
+    const listing = await adapter.listTree(head);
+    expect(listing.truncated).toBe(false);
+    expect(listing.entries.map((e) => `${e.kind}:${e.path}`).sort()).toEqual(
+      ["dir:docs", "dir:docs/img", "file:README.md", "file:docs/guide.md", "file:docs/img/a.png"].sort(),
+    );
+    expect(listing.entries.find((e) => e.path === "docs/img/a.png")?.size).toBe(2);
+    expect(recorder.urls).toHaveLength(1);
+    expect(recorder.urls[0]).toContain("recursive=1");
   });
 });

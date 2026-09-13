@@ -76,6 +76,7 @@ interface GitHubTreeEntry {
   mode: string;
   type: "blob" | "tree" | "commit";
   sha: string;
+  size?: number;
 }
 
 interface GitHubTreeGetResponse {
@@ -98,6 +99,23 @@ interface GitHubCommitListItem {
 
 interface GitHubUserResponse {
   login: string;
+}
+
+interface GitHubRepoResponse {
+  default_branch: string;
+  private?: boolean;
+  permissions?: { push?: boolean };
+}
+
+interface GitHubBranchItem {
+  name: string;
+}
+
+export interface RepoInfo {
+  defaultBranch: string;
+  /** null when the API did not report permissions. */
+  canPush: boolean | null;
+  isPrivate: boolean | null;
 }
 
 /** Encode a "/"-separated path (branch name or repo path) segment by segment. */
@@ -415,6 +433,50 @@ export class GitHubAdapter implements RepositoryAdapter {
   async currentUserLogin(): Promise<string> {
     const { data } = await this.fetchJson<GitHubUserResponse>("GET", "/user");
     return data.login;
+  }
+
+  /** Default branch and whether the token may push (connect form defaults). */
+  async repoInfo(): Promise<RepoInfo> {
+    const { data } = await this.fetchJson<GitHubRepoResponse>("GET", `/repos/${this.repoSegment()}`);
+    return {
+      defaultBranch: data.default_branch,
+      canPush: data.permissions?.push ?? null,
+      isPrivate: data.private ?? null,
+    };
+  }
+
+  /** Branch names, first page only (100). Enough for a picker; the field stays free text. */
+  async listBranches(): Promise<string[]> {
+    const { data } = await this.fetchJson<GitHubBranchItem[]>(
+      "GET",
+      `/repos/${this.repoSegment()}/branches`,
+      { searchParams: { per_page: "100" } },
+    );
+    return data.map((b) => b.name);
+  }
+
+  /**
+   * Every file under the revision in one request (Git Trees API, recursive).
+   * `truncated` is true when GitHub cut the listing (very large trees); the
+   * caller then falls back to browsing directory by directory.
+   */
+  async listTree(revision: string): Promise<{ entries: Entry[]; truncated: boolean }> {
+    const { data } = await this.fetchJson<GitHubTreeGetResponse & { truncated?: boolean }>(
+      "GET",
+      `/repos/${this.repoSegment()}/git/trees/${encodeURIComponent(revision)}`,
+      { searchParams: { recursive: "1" } },
+    );
+    const entries: Entry[] = [];
+    for (const item of data.tree) {
+      if (item.type === "blob") {
+        const entry: Entry = { path: item.path, kind: "file", blobId: item.sha };
+        if (typeof item.size === "number") entry.size = item.size;
+        entries.push(entry);
+      } else if (item.type === "tree") {
+        entries.push({ path: item.path, kind: "dir", blobId: item.sha });
+      }
+    }
+    return { entries, truncated: data.truncated === true };
   }
 
   // -------------------------------------------------------------------

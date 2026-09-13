@@ -18,13 +18,14 @@ import { GitHubAdapter } from "../adapters/github";
 import { LocalAdapterClient } from "../adapters/local";
 
 import { Header } from "./Header";
-import { ConnectScreen, valuesFromPrefill, type ConnectValues } from "./ConnectScreen";
-import { FileBrowser } from "./FileBrowser";
+import { ConnectScreen, valuesFromPrefill, type ConnectValues, type RepoLookup } from "./ConnectScreen";
+import { FileBrowser, isMarkdownPath, type TreeListing } from "./FileBrowser";
 import { DocumentView } from "./DocumentView";
 import { imageMimeType } from "./MarkdownRenderer";
 import { SavePanel } from "./SavePanel";
 import { RecoveryPanel } from "./RecoveryPanel";
 import { StripDialog } from "./StripDialog";
+import { TokenInput } from "./TokenInput";
 
 import { parseHash, formatGhSpec, type GitHubPrefill } from "../lib/hash";
 import {
@@ -43,15 +44,23 @@ import {
   type RepoContext,
 } from "../lib/queue";
 import {
+  forgetConnection,
   loadLastConnection,
+  loadPrefs,
+  loadRecentConnections,
   localSessionFlag,
+  recentPathsFor,
+  rememberConnection,
   saveLastConnection,
   loadSessionToken,
+  savePrefs,
   saveSessionToken,
   safeLocalStorage,
   safeSessionStorage,
   sessionTokenOptIn,
   setLocalSessionFlag,
+  type Prefs,
+  type RecentConnection,
 } from "../lib/settings";
 import { confirmBatch, errorKind, errorMessage, runSave, type BatchAwareAdapter, type ConflictReport } from "../lib/save";
 import { adapterErrorMessage } from "../lib/messages";
@@ -84,6 +93,36 @@ function fileText(base: Snapshot, path: string): string {
 function dirOf(path: string): string {
   const i = path.lastIndexOf("/");
   return i < 0 ? "" : path.slice(0, i);
+}
+
+/** Adapters that can list a whole revision in one call (GitHubAdapter). */
+interface TreeCapable {
+  listTree(revision: string): Promise<TreeListing>;
+}
+
+function hasListTree(adapter: unknown): adapter is TreeCapable {
+  return typeof (adapter as { listTree?: unknown }).listTree === "function";
+}
+
+/** Directories visited when an adapter can only list one folder at a time. */
+const TREE_WALK_MAX_DIRS = 400;
+
+/** Whole-tree listing by walking `list()` breadth first, capped for huge repositories. */
+async function walkTree(adapter: RepositoryAdapter, revision: string): Promise<TreeListing> {
+  const entries: Entry[] = [];
+  const queue: string[] = [""];
+  let visited = 0;
+  while (queue.length > 0) {
+    if (visited >= TREE_WALK_MAX_DIRS) return { entries, truncated: true };
+    const dir = queue.shift() ?? "";
+    visited++;
+    const list = await adapter.list(dir, revision);
+    for (const entry of list) {
+      entries.push(entry);
+      if (entry.kind === "dir") queue.push(entry.path);
+    }
+  }
+  return { entries, truncated: false };
 }
 
 /** Resolve a repo-relative image URL against the open file. */
@@ -122,6 +161,28 @@ export function App(): VNode {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [browseError, setBrowseError] = useState<string | null>(null);
   const [file, setFile] = useState<OpenFile | null>(null);
+  const [tree, setTree] = useState<TreeListing | null>(null);
+  const [treeBusy, setTreeBusy] = useState(false);
+  const [treeError, setTreeError] = useState<string | null>(null);
+
+  const [recent, setRecent] = useState<RecentConnection[]>(() => loadRecentConnections(localStore));
+  const [recentPaths, setRecentPaths] = useState<string[]>([]);
+  const [prefs, setPrefsState] = useState<Prefs>(() => loadPrefs(localStore));
+  const setPrefs = useCallback(
+    (next: Prefs): void => {
+      setPrefsState(next);
+      savePrefs(localStore, next);
+    },
+    [localStore],
+  );
+
+  // Theme: an explicit choice is stamped on <html>; "auto" leaves it to the OS.
+  useEffect(() => {
+    const root = globalThis.document?.documentElement;
+    if (!root) return;
+    if (prefs.theme === "auto") root.removeAttribute("data-theme");
+    else root.setAttribute("data-theme", prefs.theme);
+  }, [prefs.theme]);
 
   const [queue, setQueue] = useState<Operation[]>([]);
   const [pending, setPending] = useState<PendingBatch | null>(null);
@@ -177,6 +238,9 @@ export function App(): VNode {
             label: repoInfo.repoRoot,
           });
           setAuthor(repoInfo.authorName ?? "");
+          const key = { mode: "local" as const, repoKey: repoInfo.repoRoot, branch: repoInfo.branch ?? "" };
+          setRecent(rememberConnection(localStore, { ...key, author: repoInfo.authorName ?? "" }));
+          setRecentPaths(recentPathsFor(localStore, key));
           setConnectBusy(false);
         } catch (err) {
           setConnectBusy(false);
@@ -359,14 +423,35 @@ export function App(): VNode {
 
   useEffect(() => {
     if (!session) return;
+    setTree(null);
+    setTreeError(null);
     void (async () => {
-      await listDir(prefill?.path && !prefill.path.endsWith(".md") ? prefill.path : "");
+      const start = prefill?.path ?? "";
+      await listDir(start.length > 0 && !isMarkdownPath(start) ? start : "");
       await reconcileLocalRecovery(session);
       await refreshSync(session);
     })();
     // Only when the session changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
+
+  /** One listing of the whole revision for 「全体から探す」. */
+  const loadTree = useCallback(async (): Promise<void> => {
+    if (!session) return;
+    setTreeBusy(true);
+    setTreeError(null);
+    try {
+      const rev = head.length > 0 ? head : await session.adapter.head();
+      const listing = hasListTree(session.adapter)
+        ? await session.adapter.listTree(rev)
+        : await walkTree(session.adapter as RepositoryAdapter, rev);
+      setTree(listing);
+    } catch (err) {
+      setTreeError(adapterErrorMessage(errorKind(err), errorMessage(err)));
+    } finally {
+      setTreeBusy(false);
+    }
+  }, [session, head]);
 
   const openFile = useCallback(
     async (path: string): Promise<void> => {
@@ -395,6 +480,9 @@ export function App(): VNode {
           setNotice(`未保存の操作を ${restored.ops.length} 件復元しました。`);
         }
         setPending(sessionStore ? loadPendingBatch(sessionStore, ctx) : null);
+        const key = { mode: session.mode, repoKey: session.repoKey, branch: session.branch };
+        setRecent(rememberConnection(localStore, { ...key, author, path }));
+        setRecentPaths(recentPathsFor(localStore, key));
         if (session.mode === "github") {
           const spec = formatGhSpec({
             owner: session.repoKey.split("/")[0] ?? "",
@@ -402,7 +490,11 @@ export function App(): VNode {
             branch: session.branch,
             path,
           });
-          globalThis.location.hash = `gh=${spec}`;
+          try {
+            globalThis.history?.replaceState(null, "", `#gh=${spec}`);
+          } catch {
+            globalThis.location.hash = `gh=${spec}`;
+          }
           saveLastConnection(localStore, {
             owner: session.repoKey.split("/")[0] ?? "",
             repo: session.repoKey.split("/")[1] ?? "",
@@ -425,7 +517,7 @@ export function App(): VNode {
   useEffect(() => {
     if (autoOpened.current || !session || file) return;
     const path = prefill?.path;
-    if (path && path.endsWith(".md")) {
+    if (path && isMarkdownPath(path)) {
       autoOpened.current = true;
       void openFile(path);
     }
@@ -439,39 +531,43 @@ export function App(): VNode {
     setConnectError(null);
     // Leaving the lost local session behind: stop warning about its token.
     setLocalSessionFlag(sessionStore, false);
-    const adapter = new GitHubAdapter({
-      owner: values.owner.trim(),
-      repo: values.repo.trim(),
-      branch: values.branch.trim(),
-      token: values.token,
-    });
+    const owner = values.owner.trim();
+    const repo = values.repo.trim();
     void (async () => {
       try {
+        // An empty branch means the repository's default branch.
+        let branch = values.branch.trim();
+        if (branch.length === 0) {
+          const probe = new GitHubAdapter({ owner, repo, branch: "HEAD", token: values.token });
+          branch = (await probe.repoInfo()).defaultBranch;
+        }
+        const adapter = new GitHubAdapter({ owner, repo, branch, token: values.token });
         const revision = await adapter.head();
+        // The signature defaults to the token's login; failing that stays editable per comment.
+        let author = values.author.trim();
+        if (author.length === 0) {
+          try {
+            author = await adapter.currentUserLogin();
+          } catch {
+            author = "";
+          }
+        }
         tokenRef.current = values.token;
         saveSessionToken(sessionStore, values.rememberToken ? values.token : null);
-        saveLastConnection(localStore, {
-          owner: values.owner.trim(),
-          repo: values.repo.trim(),
-          branch: values.branch.trim(),
-          path: values.path.trim(),
-          author: values.author.trim(),
-        });
+        saveLastConnection(localStore, { owner, repo, branch, path: values.path.trim(), author });
+        const key = { mode: "github" as const, repoKey: `${owner}/${repo}`, branch };
+        setRecent(rememberConnection(localStore, { ...key, author }));
+        setRecentPaths(recentPathsFor(localStore, key));
         setHead(revision);
-        setAuthor(values.author.trim());
-        setPrefill({
-          owner: values.owner.trim(),
-          repo: values.repo.trim(),
-          branch: values.branch.trim(),
-          path: values.path.trim(),
-        });
+        setAuthor(author);
+        setPrefill({ owner, repo, branch, path: values.path.trim() });
         setSession({
           mode: "github",
           adapter,
           local: null,
-          repoKey: `${values.owner.trim()}/${values.repo.trim()}`,
-          branch: values.branch.trim(),
-          label: `${values.owner.trim()}/${values.repo.trim()}`,
+          repoKey: `${owner}/${repo}`,
+          branch,
+          label: `${owner}/${repo}`,
         });
         setConnectBusy(false);
       } catch (err) {
@@ -481,14 +577,33 @@ export function App(): VNode {
     })();
   };
 
-  const lookupAuthor = async (values: ConnectValues): Promise<string> => {
-    const adapter = new GitHubAdapter({
-      owner: values.owner.trim(),
-      repo: values.repo.trim(),
-      branch: values.branch.trim(),
-      token: values.token,
-    });
-    return adapter.currentUserLogin();
+  const verifyToken = async (token: string): Promise<string> => {
+    const adapter = new GitHubAdapter({ owner: "-", repo: "-", branch: "-", token });
+    try {
+      return await adapter.currentUserLogin();
+    } catch (err) {
+      throw new Error(adapterErrorMessage(errorKind(err), errorMessage(err)));
+    }
+  };
+
+  const lookupRepo = async (owner: string, repo: string, token: string): Promise<RepoLookup> => {
+    const adapter = new GitHubAdapter({ owner, repo, branch: "-", token });
+    try {
+      const info = await adapter.repoInfo();
+      let branches: string[] = [];
+      try {
+        branches = await adapter.listBranches();
+      } catch {
+        // The picker is a convenience; the field stays free text.
+      }
+      return { defaultBranch: info.defaultBranch, branches, canPush: info.canPush };
+    } catch (err) {
+      throw new Error(adapterErrorMessage(errorKind(err), errorMessage(err)));
+    }
+  };
+
+  const forgetRecent = (conn: RecentConnection): void => {
+    setRecent(forgetConnection(localStore, conn));
   };
 
   const disconnect = (): void => {
@@ -507,11 +622,33 @@ export function App(): VNode {
     setStaleReason(null);
     setSync(null);
     setRecovery(null);
+    setTree(null);
+    setTreeError(null);
+    setRecentPaths([]);
     tokenRef.current = "";
     autoOpened.current = false;
+    setPrefill(null);
+    try {
+      const loc = globalThis.location;
+      globalThis.history?.replaceState(null, "", `${loc.pathname}${loc.search}`);
+    } catch {
+      // keep the fragment
+    }
     const last = loadLastConnection(localStore);
     setInitialValues(valuesFromPrefill(null, last, "", false));
     saveSessionToken(sessionStore, null);
+  };
+
+  /** A relative link in the manuscript: open it when it is another Markdown file. */
+  const openLink = (href: string): void => {
+    if (!file) return;
+    const target = resolveRepoPath(file.path, href);
+    if (target.length === 0 || target === file.path) return;
+    if (!isMarkdownPath(target)) {
+      setNotice(`このリンク先は Markdown ではありません: ${target}`);
+      return;
+    }
+    requestNavigation({ kind: "file", path: target });
   };
 
   // -------------------------------------------------------------------
@@ -950,10 +1087,13 @@ export function App(): VNode {
         {initialValues ? (
           <ConnectScreen
             initial={initialValues}
+            recent={recent.filter((c) => c.mode === "github")}
             busy={connectBusy}
             error={connectError}
-            lookupAuthor={lookupAuthor}
+            verifyToken={verifyToken}
+            lookupRepo={lookupRepo}
             onConnect={connectGitHub}
+            onForgetRecent={forgetRecent}
           />
         ) : (
           <div class="screen">
@@ -1022,12 +1162,7 @@ export function App(): VNode {
             </button>
           </div>
           <p class="note">未保存の操作はそのまま保持しています。</p>
-          <input
-            type="password"
-            value={reauthToken}
-            autocomplete="off"
-            onInput={(e) => setReauthToken((e.currentTarget as HTMLInputElement).value)}
-          />
+          <TokenInput value={reauthToken} onInput={setReauthToken} autofocus />
           <div class="panel-actions">
             <button
               type="button"
@@ -1156,6 +1291,8 @@ export function App(): VNode {
           blockedReason={blockedReason}
           staleReason={staleReason}
           queueOpen={queueOpen}
+          prefs={prefs}
+          onPrefsChange={setPrefs}
           onQueueOpenChange={setQueueOpen}
           onAddOp={(op) => setQueue((prev) => [...prev, op])}
           onRemoveOp={(index) => setQueue((prev) => removeOperation(prev, index))}
@@ -1168,6 +1305,7 @@ export function App(): VNode {
           onImport={doImport}
           onOpenStrip={() => setStripOpen(true)}
           onBack={() => requestNavigation({ kind: "dir", dir: dirOf(file.path) })}
+          onOpenLink={openLink}
           loadImage={loadImage}
         />
       ) : (
@@ -1176,9 +1314,17 @@ export function App(): VNode {
           entries={entries}
           busy={busy}
           error={browseError}
+          recentPaths={recentPaths}
+          tree={tree}
+          treeBusy={treeBusy}
+          treeError={treeError}
+          onLoadTree={() => void loadTree()}
           onOpenDir={(next) => void listDir(next)}
           onOpenFile={(path) => requestNavigation({ kind: "file", path })}
-          onReload={() => void listDir(dir, "")}
+          onReload={() => {
+            setTree(null);
+            void listDir(dir, "");
+          }}
         />
       )}
     </div>

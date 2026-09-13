@@ -18,12 +18,15 @@ import {
   type Snapshot,
   type SourceRange,
 } from "@syuire/core";
-import { MarkdownRenderer, type RendererContext } from "./MarkdownRenderer";
+import { MarkdownRenderer, outlineOf, type RendererContext } from "./MarkdownRenderer";
 import { CommentSheet } from "./CommentSheet";
 import { ThreadPanel } from "./ThreadPanel";
 import { QueuePanel } from "./QueuePanel";
+import { OutlinePanel, type CommentRow, type OutlineTab } from "./OutlinePanel";
 import { asDomNode, selectionToSourceRange } from "../lib/selection";
+import { buildAnnotations } from "../lib/annotations";
 import { conflictReasonMessage, selectionFailureMessage } from "../lib/messages";
+import type { Prefs } from "../lib/settings";
 import { localIsoTimestamp, newId } from "../lib/time";
 
 export interface DocumentViewProps {
@@ -40,6 +43,8 @@ export interface DocumentViewProps {
   /** Non-null when the displayed body is known to be out of date (DESIGN.md 4.1). */
   staleReason: string | null;
   queueOpen: boolean;
+  prefs: Prefs;
+  onPrefsChange: (prefs: Prefs) => void;
   onQueueOpenChange: (open: boolean) => void;
   onAddOp: (op: Operation) => void;
   onRemoveOp: (index: number) => void;
@@ -52,6 +57,8 @@ export interface DocumentViewProps {
   onImport: (file: File) => void;
   onOpenStrip: () => void;
   onBack: () => void;
+  /** A relative link in the manuscript (another file) was activated. */
+  onOpenLink: (href: string) => void;
   loadImage: (url: string) => Promise<string>;
 }
 
@@ -70,10 +77,13 @@ function flowLabel(flowType: string): string {
   return FLOW_LABELS[flowType] ?? flowType;
 }
 
-type SheetState =
-  | { kind: "none" }
-  | { kind: "comment" }
-  | { kind: "reply"; commentId: string };
+type SheetState = { kind: "none" } | { kind: "comment" } | { kind: "reply"; commentId: string };
+
+function scrollIntoView(id: string): void {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.scrollIntoView({ behavior: "smooth", block: "center" });
+}
 
 export function DocumentView(props: DocumentViewProps): VNode {
   const container = useRef<HTMLDivElement | null>(null);
@@ -81,10 +91,12 @@ export function DocumentView(props: DocumentViewProps): VNode {
   const [sheet, setSheet] = useState<SheetState>({ kind: "none" });
   const [threadId, setThreadId] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [outlineTab, setOutlineTab] = useState<OutlineTab | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const tm = useMemo(() => buildTextMap(props.virtualSource), [props.virtualSource]);
   const doc = useMemo(() => parseDocument(props.virtualSource), [props.virtualSource]);
+  const outline = useMemo(() => outlineOf(tm), [tm]);
 
   const info = useMemo(() => {
     const numbers = new Map<number, number>();
@@ -92,6 +104,7 @@ export function DocumentView(props: DocumentViewProps): VNode {
     const gutter = new Map<number, number[]>();
     const changed = new Set<string>();
     const byId = new Map<string, { number: number; comment: Comment }>();
+    const rows: CommentRow[] = [];
     const statuses = markerStatuses(props.virtualSource);
     statuses.forEach((status, index) => {
       const n = index + 1;
@@ -99,7 +112,9 @@ export function DocumentView(props: DocumentViewProps): VNode {
       numbers.set(occ.start, n);
       ids.set(occ.start, occ.comment.id);
       byId.set(occ.comment.id, { number: n, comment: occ.comment });
-      if (status.status !== "ok") changed.add(occ.comment.id);
+      const isChanged = status.status !== "ok";
+      if (isChanged) changed.add(occ.comment.id);
+      rows.push({ number: n, comment: occ.comment, changed: isChanged });
       if (status.block) {
         const key = status.block.flowRange.start;
         const list = gutter.get(key);
@@ -107,8 +122,9 @@ export function DocumentView(props: DocumentViewProps): VNode {
         else gutter.set(key, [n]);
       }
     });
-    return { numbers, ids, gutter, changed, byId };
-  }, [props.virtualSource]);
+    const annotations = buildAnnotations(tm, statuses);
+    return { numbers, ids, gutter, changed, byId, rows, annotations };
+  }, [props.virtualSource, tm]);
 
   // The rendered offsets change with the source, so a stale selection must go.
   useEffect(() => {
@@ -145,7 +161,7 @@ export function DocumentView(props: DocumentViewProps): VNode {
   }, [tm, lastSelection]);
 
   const selectionNote = (() => {
-    if (!prepared) return "本文を選択してください";
+    if (!prepared) return "本文を選択すると朱を付けられます";
     if (!prepared.ok) return selectionFailureMessage(prepared.reason);
     return prepared.blockOnly
       ? `${flowLabel(prepared.placement.flowType)}への朱`
@@ -160,10 +176,16 @@ export function DocumentView(props: DocumentViewProps): VNode {
     markerIds: info.ids,
     gutter: info.gutter,
     changed: info.changed,
+    annotations: info.annotations,
+    activeCommentId: threadId,
+    highlightCode: props.prefs.highlightCode,
+    autoImages: props.prefs.autoImages,
     onMarkerClick: (id) => {
       setThreadId(id);
       setSheet({ kind: "none" });
+      setOutlineTab(null);
     },
+    onOpenLink: props.onOpenLink,
     loadImage: props.loadImage,
   };
 
@@ -225,13 +247,12 @@ export function DocumentView(props: DocumentViewProps): VNode {
   };
 
   const thread = threadId === null ? null : info.byId.get(threadId);
+  const openCount = info.rows.filter((r) => r.comment.state !== "resolved").length;
 
   return (
-    <div class="screen document">
+    <div class="screen document" style={{ "--doc-font-size": `${props.prefs.fontSize}px` }}>
       {doc.errors.length > 0 ? (
-        <div class="banner danger">
-          形式エラーが {doc.errors.length} 件あります。読取専用として表示しています。
-        </div>
+        <div class="banner danger">形式エラーが {doc.errors.length} 件あります。読取専用として表示しています。</div>
       ) : null}
       {props.applyError ? <div class="banner danger">{props.applyError}</div> : null}
       {props.blockedReason ? <div class="banner danger">{props.blockedReason}</div> : null}
@@ -286,6 +307,28 @@ export function DocumentView(props: DocumentViewProps): VNode {
         />
       ) : null}
 
+      {outlineTab !== null ? (
+        <OutlinePanel
+          tab={outlineTab}
+          onTabChange={setOutlineTab}
+          outline={outline}
+          comments={info.rows}
+          activeCommentId={threadId}
+          prefs={props.prefs}
+          onPrefsChange={props.onPrefsChange}
+          onJumpHeading={(id) => {
+            scrollIntoView(id);
+            setOutlineTab(null);
+          }}
+          onJumpComment={(id) => {
+            scrollIntoView(`marker-${id}`);
+            setThreadId(id);
+            setOutlineTab(null);
+          }}
+          onClose={() => setOutlineTab(null)}
+        />
+      ) : null}
+
       {props.queueOpen ? (
         <QueuePanel
           ops={props.queue}
@@ -299,8 +342,20 @@ export function DocumentView(props: DocumentViewProps): VNode {
       ) : null}
 
       <div class="toolbar">
-        <button type="button" class="ghost" onClick={props.onBack}>
+        <button type="button" class="ghost" onClick={props.onBack} title="ファイル一覧へ">
           ファイル
+        </button>
+        <button
+          type="button"
+          class="ghost"
+          title="目次と朱の一覧"
+          aria-label="目次と朱の一覧"
+          onClick={() => {
+            setMenuOpen(false);
+            setOutlineTab((t) => (t === null ? (openCount > 0 ? "comments" : "outline") : null));
+          }}
+        >
+          目次
         </button>
         <button
           type="button"
@@ -311,32 +366,30 @@ export function DocumentView(props: DocumentViewProps): VNode {
             setActionError(null);
             setSheet({ kind: "comment" });
             setThreadId(null);
+            setOutlineTab(null);
           }}
         >
           朱を追加
         </button>
         <button
           type="button"
+          class={props.queue.length > 0 ? "warn" : undefined}
           disabled={props.busy || props.blockedReason !== null || props.queue.length === 0}
           onClick={props.onSave}
         >
-          保存
+          保存{props.queue.length > 0 ? ` ${props.queue.length}` : ""}
         </button>
-        <button
-          type="button"
-          disabled={props.busy || props.blockedReason !== null}
-          onClick={props.onRefresh}
-        >
+        <button type="button" disabled={props.busy || props.blockedReason !== null} onClick={props.onRefresh}>
           最新
         </button>
-        <button type="button" class="ghost" onClick={() => setMenuOpen((v) => !v)}>
+        <button type="button" class="ghost" aria-label="その他" onClick={() => setMenuOpen((v) => !v)}>
           ⋯
         </button>
       </div>
       <p class="selection-note">{selectionNote}</p>
 
       {menuOpen ? (
-        <div class="menu">
+        <div class="menu" role="menu">
           <button
             type="button"
             onClick={() => {
@@ -345,6 +398,15 @@ export function DocumentView(props: DocumentViewProps): VNode {
             }}
           >
             未保存 {props.queue.length} 件
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMenuOpen(false);
+              setOutlineTab("display");
+            }}
+          >
+            表示設定
           </button>
           <button
             type="button"

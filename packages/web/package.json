@@ -12,10 +12,12 @@
     "@syuire/core": "*",
     "hast-util-to-html": "^9.0.5",
     "mdast-util-to-hast": "^13.2.0",
-    "preact": "^10.26.0"
+    "preact": "^10.26.0",
+    "prismjs": "^1.30.0"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.10.0",
+    "@types/prismjs": "^1.26.6",
     "vite": "^7.0.0"
   }
 }
